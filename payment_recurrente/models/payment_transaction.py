@@ -91,6 +91,18 @@ class PaymentTransaction(models.Model):
         """
         self.ensure_one()
         request_status = notification_data["status"]
+        
+        # Validar que el estado recibido coincide con la URL esperada
+        expected_success_url = f"{self.get_base_url()}{RecurrenteController._request_url}?tx_ref={self.reference}&status=request_success"
+        expected_cancel_url = f"{self.get_base_url()}{RecurrenteController._request_url}?tx_ref={self.reference}&status=request_cancel"
+        
+        if request_status == 'request_success' and request.httprequest.url != expected_success_url:
+            _logger.error(f"URL de éxito no coincide: {request.httprequest.url} != {expected_success_url}")
+            raise ValidationError(_("Recurrente: URL de éxito no coincide."))
+        elif request_status == 'request_cancel' and request.httprequest.url != expected_cancel_url:
+            _logger.error(f"URL de cancelación no coincide: {request.httprequest.url} != {expected_cancel_url}")
+            raise ValidationError(_("Recurrente: URL de cancelación no coincide."))
+
         if request_status in const.PAYMENT_STATUS_MAPPING['pending'] and self.state == 'draft':
             self._set_pending(_("The payment is in process."))
         elif request_status in const.PAYMENT_STATUS_MAPPING['cancel'] and self.state == 'draft':
