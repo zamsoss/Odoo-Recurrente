@@ -5,6 +5,7 @@ from werkzeug import urls
 
 from odoo import _, fields, models
 from odoo.exceptions import UserError, ValidationError
+from odoo.http import request  # Importar request
 
 from odoo.addons.payment import utils as payment_utils
 from odoo.addons.payment_recurrente import const
@@ -188,7 +189,6 @@ class PaymentTransaction(models.Model):
     def _handle_webhook_data(self, notification_data):
         """ Match the transaction with the notification data, update its state and return it.
 
-        :param str provider_code: The code of the provider handling the transaction.
         :param dict notification_data: The notification data sent by the provider.
         :return: The transaction.
         :rtype: recordset of `payment.transaction`
