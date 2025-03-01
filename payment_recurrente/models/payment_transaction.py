@@ -109,10 +109,14 @@ class PaymentTransaction(models.Model):
         # No URL validation needed
 
         if request_status in const.PAYMENT_STATUS_MAPPING['pending'] and self.state == 'draft':
-            self._set_pending(_("The payment is in process."))
+            self._set_pending()
         elif request_status in const.PAYMENT_STATUS_MAPPING['cancel'] and self.state == 'draft':
-            self._set_canceled(_("The client went back from the Recurrente's checkout."))
-        
+            self._set_canceled()
+        elif request_status in const.PAYMENT_STATUS_MAPPING['done']:
+            self._set_done()
+        elif request_status in const.PAYMENT_STATUS_MAPPING['error']:
+            self._set_error()
+
     def _handle_return_data(self, notification_data):
         """ Match the transaction with the notification data, update its state and return it.
 
