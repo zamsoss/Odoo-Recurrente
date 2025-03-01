@@ -37,12 +37,14 @@ class PaymentTransaction(models.Model):
         number = int(self.reference.split("-")[0][2:])
         name_split = self.partner_name.split(" ", maxsplit=1)
         name, surname = (name_split[0], name_split[1]) if len(name_split) > 1 else (name_split[0], "--")
-        success_url = f"{self.get_base_url()}{RecurrenteController._request_url}?tx_ref={self.reference}&status=request_success"
-        cancel_url = f"{self.get_base_url()}{RecurrenteController._request_url}?tx_ref={self.reference}&status=request_cancel"
+        
+        # Intercambiar las URLs de success y cancel
+        success_url = f"{self.get_base_url()}{RecurrenteController._request_url}?tx_ref={self.reference}&status=request_cancel"
+        cancel_url = f"{self.get_base_url()}{RecurrenteController._request_url}?tx_ref={self.reference}&status=request_success"
         
         # Log the URLs for debugging purposes
-        _logger.info(f"Success URL: {success_url}")
-        _logger.info(f"Cancel URL: {cancel_url}")
+        _logger.info(f"Success URL (intercambiada): {success_url}")
+        _logger.info(f"Cancel URL (intercambiada): {cancel_url}")
 
         payload = {
             'number': number,
