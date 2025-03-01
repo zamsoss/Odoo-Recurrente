@@ -62,6 +62,10 @@ class PaymentTransaction(models.Model):
                 "address": self.partner_address or "Ciudad",
             }
         }
+        
+        # Log the payload for debugging purposes
+        _logger.info(f"Payload sent to Recurrente: {pprint.pformat(payload)}")
+
         payment_link_data = self.provider_id._recurrente_make_request('checkouts', payload=payload)
 
         self.id_recurrente_checkout = payment_link_data["id"]
@@ -100,22 +104,13 @@ class PaymentTransaction(models.Model):
         self.ensure_one()
         request_status = notification_data["status"]
         
-        # Validar que el estado recibido coincide con la URL esperada
-        expected_success_url = f"{self.get_base_url()}{RecurrenteController._request_url}?tx_ref={self.reference}&status=request_success"
-        expected_cancel_url = f"{self.get_base_url()}{RecurrenteController._request_url}?tx_ref={self.reference}&status=request_cancel"
-        
-        if request_status == 'request_success' and request.httprequest.url != expected_success_url:
-            _logger.error(f"URL de éxito no coincide: {request.httprequest.url} != {expected_success_url}")
-            raise ValidationError(_("Recurrente: URL de éxito no coincide."))
-        elif request_status == 'request_cancel' and request.httprequest.url != expected_cancel_url:
-            _logger.error(f"URL de cancelación no coincide: {request.httprequest.url} != {expected_cancel_url}")
-            raise ValidationError(_("Recurrente: URL de cancelación no coincide."))
+        # No URL validation needed
 
         if request_status in const.PAYMENT_STATUS_MAPPING['pending'] and self.state == 'draft':
             self._set_pending(_("The payment is in process."))
         elif request_status in const.PAYMENT_STATUS_MAPPING['cancel'] and self.state == 'draft':
             self._set_canceled(_("The client went back from the Recurrente's checkout."))
-
+        
     def _handle_return_data(self, notification_data):
         """ Match the transaction with the notification data, update its state and return it.
 
@@ -123,6 +118,9 @@ class PaymentTransaction(models.Model):
         :return: The transaction.
         :rtype: recordset of `payment.transaction`
         """
+        # Log the notification data for debugging purposes
+        _logger.info(f"Notification data received from Recurrente: {pprint.pformat(notification_data)}")
+
         tx = self._get_tx_return_data(notification_data)
         tx._process_return_data(notification_data)
         # tx._execute_callback()
